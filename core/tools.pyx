@@ -1,5 +1,8 @@
+###cython: _boundscheck=False
+###cython: _wraparound=False  #wraparound=True might provide performance boost but its incompatible with negative indices
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+cimport numpy as np
 import numpy as np
 import os
 import sys
@@ -23,13 +26,13 @@ DARK_COPPER = (132./255., 73./255., 36./255.)
 COPPER_SHADOW = (25./255., 22./255, 20./255.)
 OXIDE = (20./255., 120./255., 150./255.)
 
-def weighted_average(values, weights):
+def weighted_average(np.ndarray[double, ndim=2] values, np.ndarray[double, ndim=2] weights):
     """ Perform a weighted average of values, using weights """
     weighted_sum_values = np.sum(values * weights, axis=0) 
     sum_of_weights = np.sum(weights, axis=0) 
     return (weighted_sum_values / (sum_of_weights + EPSILON))[:,np.newaxis]
 
-def generalized_mean(values, weights, exponent):
+def generalized_mean(np.ndarray[double, ndim=2] values, np.ndarray[double, ndim=2] weights, exponent):
     shifted_values = values + 1.
     values_to_power = shifted_values ** exponent
     mean_values_to_power = weighted_average(values_to_power, weights)
@@ -42,10 +45,11 @@ def generalized_mean(values, weights, exponent):
     mean[zero_indices] = 0.
     return mean
 
+eps = np.finfo(np.double).eps
+
 def map_one_to_inf(a):
     """ Map values from [0, 1] onto [0, inf) and map values 
     from [-1, 0] onto (-inf, 0] """
-    eps = np.finfo(np.double).eps
     a_prime = np.sign(a) / (1 - np.abs(a) + eps) - np.sign(a)
     return a_prime
 
@@ -75,7 +79,7 @@ def bounded_sum(a, axis=0):
         bounded_total = map_inf_to_one(np.sum(map_one_to_inf(a), axis=axis))
         return bounded_total[:,np.newaxis]
 
-def pad(a, shape, val=0.):
+def pad(np.ndarray[double, ndim=2] a, tuple shape, double val=0.):
     """
     Pad a numpy array to the specified shape
     

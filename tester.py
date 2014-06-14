@@ -1,6 +1,6 @@
 import cProfile
-import numpy as np
 import pstats
+import time
 
 """
 Run a BECCA agent with a world.
@@ -17,7 +17,7 @@ Run from the command line, e.g.
 #from worlds.grid_1D import World
 #from worlds.grid_1D_ms import World
 #from worlds.grid_1D_noise import World
-#from worlds.grid_2D import World
+from worlds.grid_2D import World
 #from worlds.grid_2D_dc import World
 #from worlds.image_1D import World
 #from worlds.image_2D import World
@@ -27,15 +27,24 @@ Run from the command line, e.g.
 #from becca_world_listen.listen import World
 #from becca_world_whitestripes.whitestripes import World
 #from becca_world_find_square.find_square import World
-from becca_world_watch.watch import World
+#from becca_world_watch.watch import World
 #from becca_world_track.track import World
 
-from core.agent import Agent 
 
-testing_lifespan = 1e8
-profiling_lifespan = 1e2
+#pyximport not working yet.. for now just use build.sh
+#import pyximport
+import numpy as np
+#pyximport.install(setup_args={'include_dirs': np.get_include()})
 
-def test(world, restore=False, show=True, agent_name=None):
+#from core.agent import Agent
+from agent import Agent
+
+
+testing_lifespan = 1e4
+profiling_lifespan = 1e3
+
+
+def test(world, restore=False, show=False, agent_name=None):
     """ 
     Run BECCA with world.  
     
@@ -62,16 +71,28 @@ def test(world, restore=False, show=True, agent_name=None):
     actions = np.zeros((world.num_actions,1))
     
     # Repeat the loop through the duration of the existence of the world 
+    
+    totalTime = 0
+    loops = 0
+        
     while(world.is_alive()):
+        a = time.time()
         sensors, reward = world.step(actions)
-        world.visualize(agent)
+        if (show):
+            world.visualize(agent)
         actions = agent.step(sensors, reward)
+        totalTime = totalTime + time.time() - a
+        loops = loops + 1
+        
+    print totalTime / loops, ' time per loop (', loops, ')'
+    
+    
     return agent.report_performance()
 
 def profile():
     """ Profile BECCA's performance """
     print 'profiling BECCA\'s performance...'
-    cProfile.run('test(World(lifespan=profiling_lifespan), restore=True)', 
+    cProfile.run('test(World(lifespan=profiling_lifespan), restore=True,show=False)', 
                  'tester_profile')
     p = pstats.Stats('tester_profile')
     #p.strip_dirs().sort_stats('time', 'cum').print_stats(30)

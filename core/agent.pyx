@@ -6,6 +6,8 @@ from block import Block
 from hub import Hub
 import tools
 
+
+
 class Agent(object):
     """ 
     A general reinforcement learning agent
@@ -13,7 +15,7 @@ class Agent(object):
     Takes in a time series of sensory input vectors and 
     a scalar reward and puts out a time series of action commands."""
     def __init__(self, num_sensors, num_actions, show=True, 
-                 agent_name='test_agent'):
+                 agent_name='cython_test_agent'):
         """
         Configure the Agent
 
@@ -23,6 +25,7 @@ class Agent(object):
         communicate with each other. 
         """
         self.BACKUP_PERIOD = 10 ** 4
+        #self.CLOCK_PERIOD = 10 ** 3
         self.show = show
         self.name = agent_name
         self.pickle_filename ="log/" + agent_name + ".pickle"
@@ -44,7 +47,8 @@ class Agent(object):
         self.surprise_history = []
         self.recent_surprise_history = [0.] * 100
         self.timestep = 0
-        self.graphing = True
+        self.graphing = False
+
 
     def step(self, sensors, reward):
         """ Step through one time interval of the agent's operation """
@@ -106,13 +110,15 @@ class Agent(object):
         #self.action[random_action_index] = 1. 
 
         if (self.timestep % self.BACKUP_PERIOD) == 0:
-                self._save()    
+                self._save()
+        if (self.timestep % 1000) == 0:
+                print '@', self.timestep
         # Log reward
         self.cumulative_reward += reward
         self.time_since_reward_log += 1
         # debug
-        if np.random.random_sample() < 0.001:
-            self.visualize()
+        #if np.random.random_sample() < 0.001:
+        #    self.visualize()
         return self.action
 
     def get_index_projections(self, to_screen=False):
@@ -196,6 +202,7 @@ class Agent(object):
         self.cumulative_reward = 0    
         self.time_since_reward_log = 0
         self.reward_steps.append(self.timestep)
+
         self._show_reward_history()
         for block in self.blocks:
             block.visualize()
@@ -208,7 +215,6 @@ class Agent(object):
         print("Final performance is %f" % performance)
         self._show_reward_history(hold_plot=self.show)
         return performance
-    
     def _show_reward_history(self, hold_plot=False, 
                             filename='log/reward_history.png'):
         """ Show the agent's reward history and save it to a file """

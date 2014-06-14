@@ -13,7 +13,7 @@ Run at the command line as a script with no argmuments:
 For N_RUNS = 7, Becca 0.5.0 scored 49
 """
 import tester
-from core.agent import Agent
+from agent import Agent
 from worlds.grid_1D import World as World_grid_1D
 from worlds.grid_1D_ms import World as World_grid_1D_ms
 from worlds.grid_1D_noise import World as World_grid_1D_noise

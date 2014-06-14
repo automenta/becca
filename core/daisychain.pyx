@@ -1,4 +1,5 @@
 import numpy as np
+cimport numpy as np
 
 import tools
 
@@ -45,7 +46,7 @@ class DaisyChain(object):
         #self.deliberation_vote = np.zeros((max_num_cables, 1))
         self.surprise = np.ones((max_num_cables, 1))
 
-    def step_up(self, cable_activities):        
+    def step_up(self, np.ndarray[double, ndim=2] cable_activities):        
         """ Train the daisychain using the current cable_activities """
         self.num_cables = np.maximum(self.num_cables, cable_activities.size)
         # Pad the incoming cable_activities array out to its full size 
@@ -68,17 +69,17 @@ class DaisyChain(object):
         #        self.pre * (1. - self.ACTIVITY_DECAY_RATE)])
         #self.post = cable_activities.copy()
 
-        chain_activities = self.pre * self.post.T
+        cdef np.ndarray[double,ndim=2] chain_activities = self.pre * self.post.T
         # Allow self-transitions
         #chain_activities[np.nonzero(np.eye(self.pre.size))] = 0.
         self.count += chain_activities
         self.count -= 1 / (self.AGING_TIME_CONSTANT * self.count + 
                            tools.EPSILON)
         self.count = np.maximum(self.count, 0)
-        update_rate_raw_post = (self.pre * ((1 - self.CHAIN_UPDATE_RATE) / 
+        cdef np.ndarray[double,ndim=2] update_rate_post = np.minimum(0.5, (self.pre * ((1 - self.CHAIN_UPDATE_RATE) / 
                                             (self.pre_count + tools.EPSILON) + 
-		                                    self.CHAIN_UPDATE_RATE)) 
-        update_rate_post = np.minimum(0.5, update_rate_raw_post)
+		                                    self.CHAIN_UPDATE_RATE)))
+		                                    
         self.pre_count += self.pre
         self.pre_count -= 1 / (self.AGING_TIME_CONSTANT * self.pre_count +
                                tools.EPSILON)
@@ -100,13 +101,13 @@ class DaisyChain(object):
         # Reshape chain activities into a single column
         return chain_activities.ravel()[:,np.newaxis]
    
-    def step_down(self, chain_goals):
+    def step_down(self, np.ndarray[double, ndim=2] chain_goals):
         """ Propogate goals down through the transition model """
         # Reshape chain_goals back into a square array 
         chain_goals = np.reshape(chain_goals, (self.post.size, -1))
         # Weight chain goals by the current cable activities   
-        upstream_goals = tools.bounded_sum(self.post * chain_goals.T)
-        cable_goals = tools.bounded_sum([upstream_goals, self.reaction])
+        cdef np.ndarray[double,ndim=2] upstream_goals = tools.bounded_sum(self.post * chain_goals.T)
+        cdef np.ndarray[double,ndim=2] cable_goals = tools.bounded_sum([upstream_goals, self.reaction])
         return cable_goals[:self.num_cables]
 
     def get_surprise(self):

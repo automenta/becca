@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-
+cimport numpy as np
 import tools
 
 class Hub(object):
@@ -43,7 +43,7 @@ class Hub(object):
         self.post = [np.zeros((self.num_cables, 1))] * (self.TRACE_LENGTH)
         return
     
-    def step(self, blocks, unscaled_reward):
+    def step(self, list blocks, double unscaled_reward):
         """ Advance the hub one step:
         1. Comb tower of blocks, collecting cable activities from each
         2. Update all-to-all reward model
